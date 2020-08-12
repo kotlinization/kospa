@@ -1,5 +1,6 @@
 plugins {
     kotlin("js") version "1.3.72"
+    `maven-publish`
 }
 
 
