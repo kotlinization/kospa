@@ -1,11 +1,12 @@
 package org.github.kotlinizer.kospa
 
+import kotlinx.browser.sessionStorage
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
 import org.w3c.dom.get
 import org.w3c.dom.set
-import kotlin.browser.sessionStorage
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -14,20 +15,23 @@ object Session {
     val firstLoad: Boolean
         get() = sessionStorage.length == 0
 
-    var currentViewClass: String? by StorageStringProperty()
+    var currentPageClass: String? by StorageStringProperty()
 
-    private var currentViewFragment: JsonObject by StorageMapProperty()
+    var currentPageParams: JsonElement by StorageMapProperty()
+
+    private var currentViewFragment: JsonElement by StorageMapProperty()
 
     fun getCurrentFragment(viewClassName: String): String? {
-        return currentViewFragment[viewClassName]?.content
+        return null
+//        return currentViewFragment[viewClassName]?.jsonPrimitive?.content
     }
 
     fun setCurrentFragment(viewClassName: String, currentFragment: String?) {
-        currentViewFragment = if (currentFragment == null) {
-            currentViewFragment.copy(currentViewFragment.content - viewClassName)
-        } else {
-            currentViewFragment.copy(currentViewFragment.content + (viewClassName to Json.parseJson(currentFragment)))
-        }
+//        currentViewFragment = if (currentFragment == null) {
+//            currentViewFragment.conte.copy(currentViewFragment.content - viewClassName)
+//        } else {
+//            currentViewFragment.copy(currentViewFragment.content + (viewClassName to Json.parseJson(currentFragment)))
+//        }
     }
 
     private class StorageBooleanProperty<in R>(
@@ -58,14 +62,14 @@ object Session {
         }
     }
 
-    private class StorageMapProperty<in R> : ReadWriteProperty<R, JsonObject> {
+    private class StorageMapProperty<in R> : ReadWriteProperty<R, JsonElement> {
 
-        override fun getValue(thisRef: R, property: KProperty<*>): JsonObject {
+        override fun getValue(thisRef: R, property: KProperty<*>): JsonElement {
             val saved = sessionStorage[property.name] ?: return JsonObject(emptyMap())
-            return Json.parseJson(saved).jsonObject
+            return Json.decodeFromString(saved)
         }
 
-        override fun setValue(thisRef: R, property: KProperty<*>, value: JsonObject) {
+        override fun setValue(thisRef: R, property: KProperty<*>, value: JsonElement) {
             sessionStorage[property.name] = value.toString()
         }
     }

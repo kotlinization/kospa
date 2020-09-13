@@ -7,9 +7,11 @@ import kotlinx.html.dom.create
 import kotlinx.html.js.body
 import org.w3c.dom.Element
 import org.w3c.dom.asList
-import kotlin.browser.document
+import kotlinx.browser.document
+import kotlinx.serialization.json.JsonNull
 
 abstract class Page(
+    protected val pageParams: PageParams = PageParams(JsonNull),
     private val initialFragmentName: String? = null,
     val stylesheets: List<String> = emptyList()
 ) : UIElement() {

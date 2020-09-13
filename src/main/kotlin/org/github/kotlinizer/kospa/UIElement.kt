@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.id
 import org.w3c.dom.Element
-import kotlin.browser.document
+import kotlinx.browser.document
 
 abstract class UIElement {
 

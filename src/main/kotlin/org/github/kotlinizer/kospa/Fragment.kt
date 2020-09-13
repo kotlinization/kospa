@@ -1,10 +1,10 @@
 package org.github.kotlinizer.kospa
 
+import kotlinx.browser.document
 import kotlinx.html.DIV
 import kotlinx.html.dom.create
 import kotlinx.html.js.div
 import org.w3c.dom.Element
-import kotlin.browser.document
 
 abstract class Fragment : UIElement() {
 

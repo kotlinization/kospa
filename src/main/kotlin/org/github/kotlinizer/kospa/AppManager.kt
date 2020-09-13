@@ -1,5 +1,6 @@
 package org.github.kotlinizer.kospa
 
+import kotlinx.browser.document
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -10,7 +11,6 @@ import org.w3c.dom.asList
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.get
-import kotlin.browser.document
 import kotlin.collections.set
 
 object AppManager {
@@ -18,7 +18,7 @@ object AppManager {
     var activePage: Page = EmptyPage()
         private set
 
-    private val viewConstructors = mutableMapOf<String, () -> Page>()
+    private val viewConstructors = mutableMapOf<String, (PageParams) -> Page>()
 
     private val fragmentConstructors = mutableMapOf<String, () -> Fragment>()
 
@@ -41,7 +41,7 @@ object AppManager {
         })
     }
 
-    fun registerView(viewClassName: String, construct: () -> Page) {
+    fun registerView(viewClassName: String, construct: (PageParams) -> Page) {
         viewConstructors[viewClassName] = construct
     }
 
@@ -54,28 +54,29 @@ object AppManager {
             ?: throw IllegalArgumentException("Fragment constructor for fragment: $fragmentClassName not added.")
     }
 
-    fun start(viewClassName: String, construct: (() -> Page)? = null) {
+    fun start(viewClassName: String, pageParams: PageParams = PageParams(), construct: ((PageParams) -> Page)? = null) {
         if (construct != null) {
             viewConstructors[viewClassName] = construct
         }
         GlobalScope.launch {
             domContentLoaded.await()
             if (Session.firstLoad) {
-                replaceView(viewClassName)
+                replaceView(viewClassName, pageParams)
             } else {
-                val viewName = Session.currentViewClass
+                val viewName = Session.currentPageClass
+                val oldPageParams = PageParams(Session.currentPageParams)
                 if (viewName == null) {
                     console.error("View should not be null here.")
                     return@launch
                 }
-                replaceView(viewName)
+                replaceView(viewName, oldPageParams)
             }
         }
     }
 
-    suspend fun replaceView(viewClassName: String) {
+    suspend fun replaceView(viewClassName: String, params: PageParams = PageParams()) {
         domContentLoaded.await()
-        val view = viewConstructors[viewClassName]?.invoke()
+        val view = viewConstructors[viewClassName]?.invoke(params)
         if (view == null) {
             console.error("No view constructor registered for view: $viewClassName")
             return
@@ -94,7 +95,8 @@ object AppManager {
         documentElement.appendChild(view.element)
         activePage = view
         view.show()
-        Session.currentViewClass = viewClassName
+        Session.currentPageClass = viewClassName
+        Session.currentPageParams = params.data
     }
 
     suspend fun addStylesheets(stylesheets: List<String>) {
