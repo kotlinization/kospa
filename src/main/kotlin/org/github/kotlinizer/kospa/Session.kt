@@ -47,7 +47,7 @@ object Session {
         }
     }
 
-    private class StorageStringProperty<in R> : ReadWriteProperty<R, String?> {
+    class StorageStringProperty<in R> : ReadWriteProperty<R, String?> {
 
         override fun getValue(thisRef: R, property: KProperty<*>): String? {
             return sessionStorage[property.name]
@@ -58,6 +58,24 @@ object Session {
                 sessionStorage.removeItem(property.name)
             } else {
                 sessionStorage[property.name] = value
+            }
+        }
+    }
+
+    class StorageListProperty<T, in R>(
+        private val generateString: (T) -> String,
+        private val fromString: (String) -> T
+    ) : ReadWriteProperty<R, List<T>> {
+
+        override fun getValue(thisRef: R, property: KProperty<*>): List<T> {
+            return sessionStorage[property.name]?.split("&")?.map(fromString) ?: emptyList()
+        }
+
+        override fun setValue(thisRef: R, property: KProperty<*>, value: List<T>) {
+            if (value.isEmpty()) {
+                sessionStorage.removeItem(property.name)
+            } else {
+                sessionStorage[property.name] = value.joinToString(separator = "&", transform = generateString)
             }
         }
     }

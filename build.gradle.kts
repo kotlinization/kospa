@@ -1,5 +1,5 @@
 plugins {
-    kotlin("js") version "1.4.10"
+    kotlin("js") version "1.8.0"
     `maven-publish`
 }
 
@@ -7,16 +7,18 @@ plugins {
 group = "org.github.kotlinizer"
 version = "0.0.1-alpha2"
 
-repositories {
-    jcenter()
-    mavenCentral()
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
 }
 
 dependencies {
     implementation(kotlin("stdlib-js"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.9")
-    implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-js:1.0.0-RC")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-js:1.5.0")
     testImplementation(kotlin("test-js"))
 }
 
