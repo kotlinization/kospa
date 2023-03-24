@@ -21,7 +21,17 @@ fun main() {
                     call.respondFile(getScriptFile())
                 }
             }
-            route("/{...}", HttpMethod.Get) {
+            route("webapp.js.map") {
+                handle {
+                    call.respondFile(getScriptMapFile())
+                }
+            }
+            route("favicon.ico") {
+                handle {
+                    call.respondBytes(byteArrayOf())
+                }
+            }
+            route("/", HttpMethod.Get) {
                 handle {
                     call.respondHtml {
                         head {
@@ -42,4 +52,8 @@ fun main() {
 
 private fun getScriptFile(): File {
     return FileSystems.getDefault().getPath("scripts/webapp.js").toFile()
+}
+
+private fun getScriptMapFile(): File {
+    return FileSystems.getDefault().getPath("scripts/webapp.js.map").toFile()
 }

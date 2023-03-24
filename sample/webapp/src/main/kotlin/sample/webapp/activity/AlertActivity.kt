@@ -1,20 +1,23 @@
 package sample.webapp.activity
 
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.html.button
 import kotlinx.html.dom.create
 import kotlinx.html.js.body
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.label
 import org.github.kotlinizer.kospa.app.Activity
-import org.github.kotlinizer.kospa.context.Context
+import org.github.kotlinizer.kospa.os.Bundle
 import org.github.kotlinizer.kospa.view.View
 
 class AlertActivity : Activity() {
 
-    override fun onCreate() {
-        super.onCreate()
+    val messageId by lazy {
+        intent.getIntExtra("message", 0)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         setContentView(AlertView(this))
     }
 }
@@ -23,6 +26,7 @@ private class AlertView(private val alertActivity: AlertActivity) : View(alertAc
 
     override fun createHTMLElement() = document.create.body {
         label { text("ALERT") }
+        label { text("Message: ${alertActivity.messageId}") }
         button {
             text("BACK")
             onClickFunction = {

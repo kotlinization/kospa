@@ -4,11 +4,10 @@ import kotlinx.browser.document
 import kotlinx.coroutines.CompletableDeferred
 import org.github.kotlinizer.kospa.app.Application
 import org.github.kotlinizer.kospa.context.Context
-import org.github.kotlinizer.kospa.context.Intent
+import org.github.kotlinizer.kospa.content.Intent
 import org.github.kotlinizer.kospa.service.ActivityManager
 import org.github.kotlinizer.kospa.service.ManifestManager
 import org.github.kotlinizer.kospa.service.SystemService
-import org.github.kotlinizer.kospa.util.Log
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
 
@@ -47,12 +46,11 @@ object System {
 
 private class SystemContext(private val application: Application) : Context() {
 
-    override fun getApplicationContext(): Context {
-        return application
-    }
+    override val applicationContext: Context
+        get() = application
 
     override fun startActivity(intent: Intent) {
-        getSystemService(ActivityManager::class).startActivity(intent.activityClass)
+        getSystemService(ActivityManager::class).startActivity(intent)
     }
 
 }

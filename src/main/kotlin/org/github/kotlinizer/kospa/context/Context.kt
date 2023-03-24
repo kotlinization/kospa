@@ -1,5 +1,6 @@
 package org.github.kotlinizer.kospa.context
 
+import org.github.kotlinizer.kospa.content.Intent
 import org.github.kotlinizer.kospa.service.SystemService
 import kotlin.reflect.KClass
 
@@ -7,7 +8,7 @@ abstract class Context {
 
     private val systemServices = mutableMapOf<KClass<out SystemService>, SystemService>()
 
-    abstract fun getApplicationContext(): Context
+    abstract val applicationContext: Context
 
     @Suppress("UNCHECKED_CAST")
     open fun <T : SystemService> getSystemService(systemServiceClass: KClass<T>): T {

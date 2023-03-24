@@ -8,13 +8,14 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.label
 import org.github.kotlinizer.kospa.app.Activity
 import org.github.kotlinizer.kospa.context.Context
-import org.github.kotlinizer.kospa.context.Intent
+import org.github.kotlinizer.kospa.content.Intent
+import org.github.kotlinizer.kospa.os.Bundle
 import org.github.kotlinizer.kospa.view.View
 
 class MainActivity : Activity() {
 
-    override fun onCreate() {
-        super.onCreate()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         setContentView(MainView(this))
     }
 }
@@ -26,7 +27,9 @@ private class MainView(context: Context) : View(context) {
         button {
             text("ALERT BUTTON")
             onClickFunction = {
-                context.startActivity(Intent(context, AlertActivity::class))
+                val intent = Intent(context, AlertActivity::class)
+                    .putExtra("message", 1)
+                context.startActivity(intent)
             }
         }
     }

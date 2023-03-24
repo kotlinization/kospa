@@ -1,5 +1,6 @@
 package org.github.kotlinizer.kospa.context
 
+import org.github.kotlinizer.kospa.content.Intent
 import org.github.kotlinizer.kospa.service.SystemService
 import kotlin.reflect.KClass
 
@@ -20,9 +21,8 @@ abstract class ContextWrapper(base: Context? = null) : Context() {
         this.base = base
     }
 
-    override fun getApplicationContext(): Context {
-        return base.getApplicationContext()
-    }
+    override val applicationContext: Context
+        get() = base.applicationContext
 
     override fun <T : SystemService> getSystemService(systemServiceClass: KClass<T>): T {
         return base.getSystemService(systemServiceClass)
