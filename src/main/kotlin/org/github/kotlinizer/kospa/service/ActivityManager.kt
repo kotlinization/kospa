@@ -6,15 +6,19 @@ import org.github.kotlinizer.kospa.content.Intent
 import org.github.kotlinizer.kospa.context.Context
 import org.github.kotlinizer.kospa.os.Bundle
 import org.github.kotlinizer.kospa.util.Log
+import org.github.kotlinizer.kospa.util.newInstance
 import org.w3c.dom.HashChangeEvent
 
 private const val TAG = "ActivityManager"
 
 class ActivityManager internal constructor(context: Context) : SystemService(context) {
+    companion object {
+        private var activityIdGenerator = 0
+    }
 
     private val manifestManager by lazy { getSystemService(ManifestManager::class) }
 
-    private var currentLocation: String = ""
+    private val activityStack by lazy { ActivityStack() }
 
     override fun onStart() {
         val launcherActivity = manifestManager.launcherActivity
@@ -23,14 +27,10 @@ class ActivityManager internal constructor(context: Context) : SystemService(con
             return
         }
 
-        val path = window.location.href.split("#").lastOrNull()
-        val pathEntry = path?.let { manifestManager.getEntry(it) }
-
         window.onhashchange = ::onHashChanged
 
-        if (pathEntry != null) {
-            startActivity(Intent(applicationContext, pathEntry.activityClass))
-        } else {
+        reconstructActivity(window.location.href)
+        if (activityStack.currentActivity == null) {
             startActivity(Intent(applicationContext, launcherActivity))
         }
     }
@@ -47,49 +47,84 @@ class ActivityManager internal constructor(context: Context) : SystemService(con
 
     internal fun finishActivity(activity: Activity) {
         window.history.back()
-
     }
 
     private fun onHashChanged(event: HashChangeEvent) {
-        if (currentLocation != "" && window.location.href.endsWith("#$currentLocation")) {
+        reconstructActivity(event.newURL)
+    }
+
+    private fun reconstructActivity(url: String) {
+        val id = window.history.state?.toString()
+        val currentActivity = activityStack.currentActivity
+        if (currentActivity != null && currentActivity.id == id) {
             return
         }
 
-        val path = event.newURL.split("#").lastOrNull()
-        val pathData = path?.split("?")
-        val pathEntry = pathData?.firstOrNull()?.let { manifestManager.getEntry(it) } ?: return
+        val oldActivity = id?.run(activityStack::getById)
+        if (oldActivity != null) {
+            currentActivity?.onPause()
+            currentActivity?.onStop()
 
-        val bundle = pathData.getOrNull(1)?.let(Bundle::fromUrlEncodedData)
-        var intent = Intent(applicationContext, pathEntry.activityClass)
-        if (bundle != null) {
-            intent = intent.putExtras(bundle)
+            oldActivity.onStart()
+            oldActivity.onResume()
+            activityStack.moveToTop(oldActivity)
+        } else {
+            val path = url.split("#").lastOrNull()
+            val pathData = path?.split("?")
+            val pathEntry = pathData?.firstOrNull()?.let { manifestManager.getEntry(it) } ?: return
+
+            val bundle = pathData.getOrNull(1)?.let(Bundle::fromUrlEncodedData)
+            var intent = Intent(applicationContext, pathEntry.activityClass)
+            if (bundle != null) {
+                intent = intent.putExtras(bundle)
+            }
+            launchActivity(pathEntry, intent)
         }
-        launchActivity(pathEntry, intent)
     }
 
     private fun launchActivity(entry: ManifestManager.Entry, intent: Intent) {
         val activity = entry.activityClass.js.newInstance()
+        activity.id = (activityIdGenerator++).toString()
         activity.intent = intent
         activity.attachBaseContext(applicationContext)
-
-        Log.v(
-            TAG,
-            "Launching activity: ${entry.activityClass.simpleName}, extras: ${intent.extras?.getUrlEncodedData()}"
-        )
+        activityStack.push(activity)
 
         val arguments = intent.extras?.getUrlEncodedData() ?: ""
-        currentLocation = if (entry.showInUrl) {
+        val currentLocation = if (entry.showInUrl) {
             entry.path + if (arguments.isEmpty()) "" else "?$arguments"
         } else {
             ""
         }
         window.location.href = "#$currentLocation"
+        window.history.replaceState(activity.id, "")
         activity.onCreate(null)
+
+        activityStack.currentActivity?.onPause()
+        activityStack.currentActivity?.onStop()
+
+        activity.onStart()
+        activity.onResume()
     }
 }
 
-private fun <T : Any> JsClass<T>.newInstance(): T {
-    @Suppress("UNUSED_PARAMETER")
-    inline fun callConstructor(constructor: dynamic) = js("new constructor()")
-    return callConstructor(asDynamic()) as T
+private class ActivityStack {
+
+    var currentActivity: Activity? = null
+        private set
+
+    private val activities = mutableListOf<Activity>()
+
+    fun getById(id: String): Activity? {
+        return activities.firstOrNull { it.id == id }
+    }
+
+    fun push(activity: Activity) {
+        activities.add(activity)
+        currentActivity = activity
+    }
+
+    fun moveToTop(activity: Activity) {
+        activities.remove(activity)
+        push(activity)
+    }
 }

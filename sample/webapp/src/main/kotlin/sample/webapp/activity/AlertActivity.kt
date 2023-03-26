@@ -7,6 +7,7 @@ import kotlinx.html.js.body
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.label
 import org.github.kotlinizer.kospa.app.Activity
+import org.github.kotlinizer.kospa.content.Intent
 import org.github.kotlinizer.kospa.os.Bundle
 import org.github.kotlinizer.kospa.view.View
 
@@ -31,6 +32,17 @@ private class AlertView(private val alertActivity: AlertActivity) : View(alertAc
             text("BACK")
             onClickFunction = {
                 alertActivity.finish()
+            }
+        }
+        button {
+            text("NEXT")
+            onClickFunction = {
+                alertActivity.startActivity(
+                    Intent(alertActivity, AlertActivity::class).putExtra(
+                        "message",
+                        alertActivity.messageId + 1
+                    )
+                )
             }
         }
     }
