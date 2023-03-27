@@ -45,7 +45,22 @@ class ActivityManager internal constructor(context: Context) : SystemService(con
         launchActivity(entry, intent)
     }
 
+    internal fun startActivityForResult(intent: Intent, resultForActivity: Activity.ResultForActivity) {
+        val entry = manifestManager.getEntry(intent.activityClass)
+        if (entry == null) {
+            Log.e(TAG, "Activity: ${intent.activityClass.simpleName} is not registered in Manifest.")
+            return
+        }
+
+        launchActivity(entry, intent, resultForActivity)
+    }
+
     internal fun finishActivity(activity: Activity) {
+        activity.resultForActivity?.let { result ->
+            activityStack.getById(result.activityId)
+                ?.dispatchResult(result.requestCode, result.resultCode ?: return@let, result.data)
+        }
+        activityStack.remove(activity.id)
         window.history.back()
     }
 
@@ -82,10 +97,15 @@ class ActivityManager internal constructor(context: Context) : SystemService(con
         }
     }
 
-    private fun launchActivity(entry: ManifestManager.Entry, intent: Intent) {
+    private fun launchActivity(
+        entry: ManifestManager.Entry,
+        intent: Intent,
+        resultForActivity: Activity.ResultForActivity? = null
+    ) {
         val activity = entry.activityClass.js.newInstance()
         activity.id = (activityIdGenerator++).toString()
         activity.intent = intent
+        activity.resultForActivity = resultForActivity
         activity.attachBaseContext(applicationContext)
         activityStack.push(activity)
 
@@ -126,5 +146,9 @@ private class ActivityStack {
     fun moveToTop(activity: Activity) {
         activities.remove(activity)
         push(activity)
+    }
+
+    fun remove(id: String) {
+        activities.removeAll { it.id == id }
     }
 }
